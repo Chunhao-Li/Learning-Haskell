@@ -294,8 +294,8 @@ groupOf 0 _ = undefined
 groupOf _ [] = [] 
 groupOf n xs = take n xs : groupOf n (drop n xs)
 
-data Board = [Move]
-data Move = (Player, (Int, Int)) -- X, Y coordinates
+type Board = [Move]
+type Move = (Player, (Int, Int)) -- X, Y coordinates
 data Player = X | O
     deriving (Show, Eq)
     
@@ -312,7 +312,7 @@ isValidMove = undefined
 
 
 greedyMove :: Board -> Player -> Move
-
+greedyMove = undefined
 
 allMoves :: Player -> [Move]
 allMoves player = [(player, (x, y)) | x <- [0..2], y <- [0..2]]
@@ -323,10 +323,52 @@ validMoves board moves
 	| otherwise  			= filter (isValidMove board) moves
 
 scoreMove :: Board -> [Move] -> [(Int, Move)]
-scoreMove board possibleMoves = 
+scoreMove board possibleMoves = undefined
 
 maximum' :: [(Int, Move)] -> Move
-maximum' scoredMoves =
+maximum' scoredMoves =undefined
+
+
+qSort :: [Integer] -> [Integer]
+qSort [] = []
+qSort (x:xs) = qSort [y | y<-xs, y<=x] ++ [x] ++ qSort [y | y<-xs, y>x]
+
+mSort :: [Integer] -> [Integer]
+mSort [] = []
+mSort [x] = [x]
+mSort lst = merge (mSort firsthalf) (mSort secondhalf)
+	where 
+		firsthalf = take half lst
+		secondhalf = drop half lst 
+		half 	= (length lst) `div` 2
+
+merge :: [Integer] -> [Integer] -> [Integer]
+merge lst [] = lst 
+merge [] lst = lst 
+merge (x:xs) (y:ys)
+	| x <= y 		= x:merge xs (y:ys)
+	| otherwise		= y:merge (x:xs) ys
+
+
+
+
+
+data CMaybe a = CNothing | CJust Int a deriving (Show)
+
+instance Functor CMaybe where
+	fmap f CNothing = CNothing
+	fmap f (CJust counter x) = CJust (counter+1) (f x)
+
+
+-- instance Applicative Maybe where
+-- 	pure = Just
+-- 	Nothing <*> _ = Nothing
+-- 	(Just f) <*> something = fmap f something
+
+
+
+
+
 
 
 

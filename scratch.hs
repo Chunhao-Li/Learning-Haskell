@@ -365,10 +365,12 @@ instance Functor CMaybe where
 -- 	Nothing <*> _ = Nothing
 -- 	(Just f) <*> something = fmap f something
 
+newtype CharList a = CharList { getcharlist :: [Char]} deriving (Show, Eq)
 
 
-
-
+newtype Pair b a = Pair {getPair :: (a, b)}
+instance Functor (Pair c) where 
+	fmap f (Pair (x, y)) = Pair (f x, y)
 
 
 

@@ -15,6 +15,8 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString as S
 import Control.Applicative
 import Data.Monoid
+import Set
+import qualified Data.Foldable as F
 
 
 check ::  (Eq a) => [a] -> [a] -> [a]
@@ -147,6 +149,16 @@ lockers :: LockerMap
 lockers = Map.fromList [(100,(Taken,"dfsf")), (101,(Free,"fse")),(103,(Free,"Idfw"))]
 
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show)
+
+
+-- foldMap :: (Monoid m, Foldable t) => (a -> m) -> t a -> m
+instance Foldable Tree where 
+
+  foldMap f EmptyTree = mempty
+  foldMap f (Node x left right) = foldMap f left `mappend` 
+                                  f x             `mappend`
+                                  foldMap f right
+
 
 singleton :: a -> Tree a
 singleton x = Node x EmptyTree EmptyTree
@@ -420,8 +432,8 @@ val ((n,w):stor) v
     | otherwise = val stor v  
 
 value :: Store -> Var -> Integer 
-value (Store []) = 0 
-value (Store (n,w):stor) v 
+value (Store []) _ = 0 
+value (Store ((n,w):stor)) v 
     | v == w      = n 
     | otherwise   = value (Store stor) v 
 
@@ -431,6 +443,65 @@ upd stor v n = (n,v) : stor
 
 update :: Store -> Var -> Integer -> Store
 update (Store stor) v n = Store $ (n,v) : stor
+
+triple :: Integer -> Integer
+triple = (*3)
+
+inc :: Integer -> Integer
+inc = (+1)
+
+
+applyMaybe :: Maybe a -> (a -> Maybe b) -> Maybe b
+applyMaybe Nothing _ = Nothing
+applyMaybe (Just x) f = f x 
+
+
+type Birds = Int 
+type Pole = (Birds, Birds)
+
+landLeft :: Birds -> Pole -> Maybe Pole
+landLeft n (left, right) 
+  | abs ((left + n) - right) < 4 = Just (left+n, right)
+  | otherwise = Nothing
+
+landRight :: Birds -> Pole -> Maybe Pole
+landRight n (left, right) 
+  | abs (left - (right + n)) < 4 = Just (left, right+n)
+  | otherwise   = Nothing
+
+-- (-:) :: a -> (a->a) -> a 
+x -: f = f x 
+
+banana :: Pole -> Maybe Pole
+banana _ = Nothing  
+
+foo :: Maybe String
+foo = do 
+  x <- Just 3
+  y <- Just "!"
+  Just (show x ++ y)
+
+marySue :: Maybe Bool 
+marySue = do 
+  x <- Just 9
+  Just (x > 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

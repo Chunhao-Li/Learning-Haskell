@@ -7,10 +7,11 @@ module Set (Set ,
     subSet,
     makeSet,
     filterSet,
-    foldSet,
-    showSet,
-    card,
-    flatten
+    mapSet,
+    -- foldSet,
+    -- showSet,
+    -- card,
+    -- flatten
     ) where
 
 import Data.List hiding (union)
@@ -36,7 +37,7 @@ sing :: a -> Set a
 sing x = Set [x]
 
 memSet :: Ord a => Set a -> a -> Bool
-memSet (Set []) y = False
+memSet (Set []) _ = False
 memSet (Set (x:xs)) y
     | x < y         = memSet (Set xs) y
     | x == y        = True
@@ -58,7 +59,7 @@ union (Set xs) (Set ys) = Set (uni xs ys)
 uni :: Ord a => [a] -> [a] -> [a]
 uni [] ys = ys 
 uni xs [] = xs 
-uni (x:Xs) (y:ys)
+uni (x:xs) (y:ys)
   | x < y = x:uni xs (y:ys)
   | x == y = x:uni xs ys
   | otherwise = y:uni (x:xs) ys
@@ -66,24 +67,30 @@ uni (x:Xs) (y:ys)
 diff :: Ord a => Set a -> Set a -> Set a
 diff (Set xs) (Set ys) = Set (dif xs ys)
 
-diff :: Ord a => [a] -> [a] -> [a] 
-diff [] ys = []
-diff xs [] = xs 
-diff (x:xs) (y:ys)
-  | x < y       = x: diff xs (y:ys)
-  | x == y      = diff xs ys 
-  | otherwise   = diff (x:xs) ys
+dif :: Ord a => [a] -> [a] -> [a] 
+dif [] _ = []
+dif xs [] = xs 
+dif (x:xs) (y:ys)
+  | x < y       = x: dif xs (y:ys)
+  | x == y      = dif xs ys 
+  | otherwise   = dif (x:xs) ys
 
 subSet :: Ord a => Set a -> Set a -> Bool
 subSet (Set xs) (Set ys) = subS xs ys 
 
 subS :: Ord a => [a] -> [a] -> Bool 
-subS [] ys = True
-subS xs [] = False 
+subS [] _ = True
+subS _ [] = False 
 subS (x:xs) (y:ys)
   | x < y   = False 
   | x == y  = subS xs ys 
   | otherwise = subS (x:xs) ys
+
+mapSet :: Ord b => (a -> b) -> Set a -> Set b 
+mapSet f (Set xs) = makeSet (map f xs)
+
+filterSet :: Ord a => (a -> Bool) -> Set a -> Set a
+filterSet f (Set xs) = makeSet $ filter f xs 
 
 
 makeSet :: Ord a => [a] -> Set a

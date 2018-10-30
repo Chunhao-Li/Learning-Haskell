@@ -7,6 +7,7 @@ module Scratch
 , groupOf
 ,optimalPath) where
 --Pal week05 isPangram
+import Control.Monad.Instances
 import Data.List
 import Data.Char
 import qualified Data.Map as Map
@@ -17,7 +18,9 @@ import Control.Applicative
 import Data.Monoid
 import Set
 import qualified Data.Foldable as F
-
+import Control.Monad
+import Control.Monad.Writer
+import Control.Monad.State
 
 check ::  (Eq a) => [a] -> [a] -> [a]
 check a b
@@ -148,30 +151,30 @@ lockerLookup lockerNumber map = case Map.lookup lockerNumber map of
 lockers :: LockerMap
 lockers = Map.fromList [(100,(Taken,"dfsf")), (101,(Free,"fse")),(103,(Free,"Idfw"))]
 
-data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show)
-
+data Tree a = Empty| Node a (Tree a) (Tree a) deriving (Show)
+-- data Tree a = Null | Node a {lTree, rTree :: Tree a}
 
 -- foldMap :: (Monoid m, Foldable t) => (a -> m) -> t a -> m
 instance Foldable Tree where 
 
-  foldMap f EmptyTree = mempty
+  foldMap f Empty = mempty
   foldMap f (Node x left right) = foldMap f left `mappend` 
                                   f x             `mappend`
                                   foldMap f right
 
 
 singleton :: a -> Tree a
-singleton x = Node x EmptyTree EmptyTree
+singleton x = Node x Empty Empty
 
 treeInsert :: (Ord a) => a -> Tree a -> Tree a
-treeInsert x EmptyTree = singleton x
+treeInsert x Empty = singleton x
 treeInsert x (Node a left right)
     | x < a     = Node a (treeInsert x left) right
     | x > a     = Node a left (treeInsert x right)
     | otherwise = Node a left right
 
 treeElem :: (Ord a) => a -> Tree a -> Bool
-treeElem x EmptyTree = False
+treeElem x Empty = False
 treeElem x (Node a left right)
     | x < a     = treeElem x left
     | x > a     = treeElem x right
@@ -208,7 +211,7 @@ instance YesNo (Maybe a) where
     yesno Nothing = False
 
 instance YesNo (Tree a) where
-    yesno EmptyTree = False
+    yesno Empty = False
     yesno _ =True
 
 instance YesNo TrafficLight where
@@ -487,55 +490,229 @@ marySue = do
   Just (x > 8)
 
 
+justH :: Maybe Char
+justH = do
+    (x:xs) <- Just ""
+    return x
+
+listOfTuples :: [(Int, Char)]
+listOfTuples = do 
+    n <- [1,2]
+    ch <- ['a','b']
+    return (n, ch)
+
+-- class Monad m => MonadPlus m where
+--     mzero :: m a
+--     mplus :: m a -> m a -> m a
+
+-- instance MonadPlus [] where
+--     mzero = []
+--     mplus = (++)
+
+-- instance MonadPlus Maybe where
+--     mzero = Nothing
+--     mplus = 
+
+-- guard :: (MonadPlus m) => Bool -> m ()
+-- guard True = return ()
+-- guard False = mzero
+
+
+sevensOnly :: [Int]
+sevensOnly = do 
+    x <- [1..50]
+    _ <- guard ('7' `elem` show x)
+    return x 
+
+type KnightPos = (Int, Int)
+
+moveKnight :: KnightPos -> [KnightPos]
+moveKnight (c, r) = do
+    (c', r') <- [(c+2,r-1),(c+2,r+1),(c-2,r+1),(c-2,r-1),
+                (c+1,r-2),(c+1,r+2),(c-1,r-2),(c-1,r+2)]
+    guard (c' `elem` [1..8] && r' `elem` [1..8])
+    return (c', r')
+
+in3 :: KnightPos -> [KnightPos]
+in3 start = return start >>= moveKnight >>= moveKnight >>= moveKnight
+-- in3 start = do
+--     first <- moveKnight start
+--     second <- moveKnight first
+--     moveKnight second
+type KnightMove = (Int, Int)
+
+-- canReachIn3 :: KnightPos -> KnightPos -> []
+-- canReachIn3 start end 
+--   | end `elem` in3 start
+
+isBigGang :: Int -> (Bool, String) 
+isBigGang x = (x > 9, "Compared gang size to 9.")
+
+
+
+freeTree :: Tree Char  
+freeTree =   
+    Node 'P'  
+        (Node 'O'  
+            (Node 'L'  
+                (Node 'N' Empty Empty)  
+                (Node 'T' Empty Empty)  
+            )  
+            (Node 'Y'  
+                (Node 'S' Empty Empty)  
+                (Node 'A' Empty Empty)  
+            )  
+        )  
+        (Node 'L'  
+            (Node 'W'  
+                (Node 'C' Empty Empty)  
+                (Node 'R' Empty Empty)  
+            )  
+            (Node 'A'  
+                (Node 'A' Empty Empty)  
+                (Node 'C' Empty Empty)  
+            )  
+        )  
+
+data Direction = L | R deriving (Show)
+type Directions = [Direction]
+
+-- changeToP :: Tree Char -> Tree Char
+-- changeToP (Node x l (Node y (Node _ m n) r)) = Node x l (Node y (Node 'P' m n) r)
+
+
+changeToP :: Directions -> Tree Char -> Tree Char
+changeToP (L:ds) (Node x l r) = Node x (changeToP ds l ) r 
+changeToP (R:ds) (Node x l r) = Node x l (changeToP ds r)
+changeToP [] (Node _ l r) = Node 'P' l r 
+
+elemAt :: Directions -> Tree a -> a
+elemAt (L:ds) (Node _ l _) = elemAt ds l 
+elemAt (R:ds) (Node _ _ r) = elemAt ds r 
+elemAt [] (Node x _ _) = x
+
+type Breadcrumbs a = [Crumb a]
+
+goLeft :: (Tree a, Breadcrumbs a) -> (Tree a, Breadcrumbs a)
+goLeft (Node x l r, bs) = (l, LeftCrumb x r:bs)
+
+goRight :: (Tree a, Breadcrumbs a) -> (Tree a, Breadcrumbs a)
+goRight (Node x l r, bs) = (r, RightCrumb x l:bs)
+
+goUp :: (Tree a, Breadcrumbs a) -> (Tree a, Breadcrumbs a)
+goUp (t, LeftCrumb x r:bs) = (Node x t r, bs)
+goUp (t, RightCrumb x l:bs) = (Node x l t, bs)
+
+data Crumb a = LeftCrumb a (Tree a) | RightCrumb a (Tree a) deriving (Show)
+
+type Zipper a = (Tree a, Breadcrumbs a)
+
+modify :: (a->a) -> Zipper a -> Zipper a 
+modify f (Node x l r, bs) = (Node (f x) l r, bs)
+modify f (Empty, bs)  = (Empty, bs)
 
 
 
 
+applyLog :: (Monoid m) => (a, m) -> (a -> (b, m)) -> (b, m)
+applyLog (x, log) f = let (y, newLog) = f x in (y, log `mappend` newLog)
+
+type Food = String 
+type Price = Sum Int 
+
+addDrink :: Food -> (Food, Price)
+addDrink "beans" = ("milk", Sum 25)
+addDrink "jerky" = ("whiskey", Sum 99)
+addDrink _ = ("beer", Sum 30)
 
 
+logNumber :: Int -> Writer [String] Int 
+logNumber x = writer (x, ["Got number: " ++ show x])
 
+multWithLog :: Writer [String] Int
+multWithLog = do 
+  a <- logNumber 3
+  b <- logNumber 5
+  tell ["Gonna multiply these two"]
+  return (a*b)
 
+gcd' :: Int -> Int -> Writer [String] Int
+gcd' a b 
+  | b == 0  = do
+    tell ["Finished with " ++ show a]
+    return a
+  | otherwise = do 
+    tell [show a ++ " mod " ++ show b ++ " = " ++ show (a`mod`b)]
+    gcd' b (a `mod` b)
 
+gcdReverse :: Int -> Int -> Writer (DiffList String) Int
+gcdReverse a b 
+  | b == 0  = do
+    tell (toDiffList ["Finished with " ++ show a])
+    return a
+  | otherwise = do 
+    result <- gcdReverse b (a `mod` b)
+    tell (toDiffList [show a ++ " mod " ++ show b ++ " = " ++ show (a`mod`b)])
+    return result
 
+newtype DiffList a = DiffList { getDiffList :: [a] -> [a] }
 
+toDiffList :: [a] -> DiffList a 
+toDiffList xs = DiffList (xs++)
 
+fromDiffList :: DiffList a -> [a]
+fromDiffList (DiffList f) = f []
 
+instance Monoid (DiffList a) where
+  mempty = DiffList (\xs -> [] ++ xs)
+  (DiffList f) `mappend` (DiffList g) = DiffList (\xs -> f (g xs))
 
+finalCountDown :: Int -> Writer (DiffList String) ()
+finalCountDown 0 = do
+  tell (toDiffList ["0"])
+finalCountDown x = do 
+  finalCountDown (x-1)
+  tell (toDiffList [show x])
 
+finalCountDown' :: Int -> Writer [String] ()
+finalCountDown' 0 = do
+  tell ["0"]
+finalCountDown' x = do
+  finalCountDown' (x-1)
+  tell [show x]
 
+addStuff :: Int -> Int 
+addStuff = do 
+  a <- (*2)
+  b <- (+10)
+  return (a+b)
 
+addStuff' :: Int -> Int
+addStuff' x = let 
+  a = (*2) x 
+  b = (+10) x 
+  in a+b
 
+type Stack = [Int]
+newtype Stack1 s a = Stack1 {runStack1 :: s -> (a, s)}
 
+pop :: Stack -> (Int, Stack)
+pop (x:xs) = (x, xs)
 
+push :: Int -> Stack -> ((), Stack)
+push a xs = ((), a:xs)
 
+stackManip :: Stack -> (Int, Stack)
+stackManip stack = let 
+  ((), newStack1) = push 3 stack 
+  (a, newStack2)  = pop newStack1
+  in pop newStack2
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+stackManip' :: Stack -> (Int, Stack)
+stackManip' = do
+  push 3
+  a <- pop
+  pop
 
 
 

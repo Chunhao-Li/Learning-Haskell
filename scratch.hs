@@ -714,6 +714,82 @@ stackManip' = do
   a <- pop
   pop
 
+type Date = (Double, Double, Double)
+tripleTest :: Date -> String
+tripleTest (_,m,_) = case m of 
+    1 -> "test"
+    _ -> "otherwise"
+
+quicksorttest :: (Ord a) => [a] -> [a]
+quicksorttest list = case list of
+    [] -> []
+    [x] -> quicksortHelper x x []
+    [x,y] -> quicksortHelper x y [x]
+    x:y:xs -> quicksortHelper x y [x] ++ quicksorttest xs
+
+quicksortHelper :: (Ord a) => a -> a -> [a] -> [a]
+quicksortHelper x y accumulator
+    | y >= x      = accumulator++[y]
+    | otherwise   = y:accumulator
+
+type CardHolder = String
+type CardNumber = String
+type Address = [String]
+type CustomerID = Int
+
+data BillingInfo = CreditCard CardNumber CardHolder Address
+                 | CashOnDelivery
+                 | Invoice CustomerID
+                   deriving (Show)
+
+
+-- getNode::NTree->Integer
+-- getNode tree=case tree of
+--     NilTree      ->error"No node"
+--     Node n t1 t2 ->n
+-- collapseTree :: NTree -> [Integer]
+-- collapseTree tree = case tree of
+--     NilTree      ->[]
+--     Node n t1 t2 ->getNode t1:n:getNode t2:[]
+
+-- Node
+--   5
+--   (Node
+--      4
+--      (Node 2 Null (Node 11 Null Null))
+--      (Node 1 (Node 0 Null Null) (Node (-3) Null Null)))
+--   (Node 3 (Node 8 (Node (-4) Null Null) (Node 7 Null Null)) Null)
+
+-- bar = let   a = 1
+--             b = 2
+--             c = 3
+--       in a+b+c
+
+-- foo = let {a=1; b= 2; c=3}
+--       in a+b+c
+
+splitLines :: String -> [String]
+splitLines [] = []
+splitLines cs = 
+  let (pre, suf) = break isLineTerminator cs
+  in pre : case suf of
+            ('\r':'\n':rest)  -> splitLines rest
+            ('\r':rest)       -> splitLines rest
+            ('\n':rest)       -> splitLines rest
+            _                 -> []
+
+isLineTerminator c = c == '\r' || c == '\n'
+
+fixLines :: String -> String 
+fixLines input = unlines (splitLines input)
+
+
+
+
+
+
+
+
 
 
 

@@ -421,8 +421,8 @@ instance Show Store where
 
 
 
-init :: [ (Integer, Var) ]
-init = []
+-- init :: [ (Integer, Var) ]
+-- init = []
 
 initial :: Store
 initial = Store []
@@ -783,15 +783,62 @@ isLineTerminator c = c == '\r' || c == '\n'
 fixLines :: String -> String 
 fixLines input = unlines (splitLines input)
 
+asInt_fold :: String -> Int
+asInt_fold ls = case ls of 
+  []    -> 0
+  x:xs
+    | x == '-'  -> -1 * ( foldl step 0 xs )
+    | otherwise -> foldl step 0 (x:xs)
+    where step x y = 10*x + digitToInt y
 
+type ErrorMessage = String
+asInt_either :: String -> Either ErrorMessage Int
+asInt_either ls = case ls of 
+    []  -> Left "Empty list"
+    x:xs 
+      | x == '-'  -> Right $ -1 * (foldl step 0 xs)
+      | isDigit x   -> Right $ foldl step 0 (x:xs)
 
+      | otherwise   -> Left $ "non-digit" ++ show x
+      where step x y = 10*x + digitToInt y
 
+myConcat :: [[a]] -> [a]
+myConcat = foldr (++) [] 
 
+myTakeWhile :: (a -> Bool) -> [a] -> [a]
+myTakeWhile f list = case list of 
+    [] -> []
+    x:xs
+      | f x   -> foldr step [] (myTakeWhile f xs)
+      | otherwise -> []
+      where step y ys = y:ys
 
+notMyTakeWhile :: (a -> Bool) -> [a] -> [a]
+notMyTakeWhile p ls = foldr step [] ls
+  where step x ys | p x = x : ys
+                  | otherwise = []
 
+myGroupBy :: (a -> a -> Bool) -> [a] -> [[a]]
+myGroupBy f list = foldr step [] list
+  where step x acc = case acc of 
+          []      -> [[x]]
+          _
+            | f x (head (head acc)) -> (x:(head acc)):(tail acc)
+            | otherwise -> [x]:acc
 
+myAny :: (a -> Bool) -> [a] -> Bool
+myAny f  = foldr (\x acc -> f x || acc) False
 
+myCycle :: [a] -> [a]
+myCycle list = case list of 
+    []    -> error "emepty list"
+    xs    -> foldr (:) (myCycle xs) xs
 
+myCycle' :: [a] -> [a]
+myCycle' = (foldr (++) [] ). repeat
 
+suffixies :: [a] -> [[a]]
+suffixies xs@(_:xs') = xs: suffixies xs'
 
-
+suffixies' :: [a] -> [[a]]
+suffixies' = init.tails
